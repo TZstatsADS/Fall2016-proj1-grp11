@@ -33,7 +33,7 @@ Proj_1a<-cbind(Origdata1$SERIALNO,Origdata1$ST,Origdata1$SEX,
                Origdata1$AGEP,Origdata1$SCHL,Origdata1$FOD1P,Origdata1$FOD2P,
                Origdata1$WKHP,Origdata1$ESR,Origdata1$PINCP,Origdata1$PERNP)
 Origdata2<-read.csv("ss14pusb.csv",header=T)
-Proj_1a<-cbind(Origdata2$SERIALNO,Origdata2$ST,Origdata2$SEX,
+Proj_1b<-cbind(Origdata2$SERIALNO,Origdata2$ST,Origdata2$SEX,
                Origdata2$AGEP,Origdata2$SCHL,Origdata2$FOD1P,Origdata2$FOD2P,
                Origdata2$WKHP,Origdata2$ESR,Origdata2$PINCP,Origdata2$PERNP)
 Proj_1<-rbind(Proj_1a,Proj_1b)
