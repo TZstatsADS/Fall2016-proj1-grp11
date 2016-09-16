@@ -11,6 +11,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ###We first select the variables which we would use in the analysis.
 ####Include:
+
 Variables     | Dictionary
 ------------- | -------------
 SERIALNO      | Unique code for person
@@ -24,6 +25,8 @@ WKHP          | Hours Worked per Week
 ESR           | Employment Status Recode
 PINCP         | Total Person's Income
 PERCP         | Total Person's Earning
+              |
+              
 ###Here we merge the a part and b part data into one dataset:Proj_1
 
 ```{r}
