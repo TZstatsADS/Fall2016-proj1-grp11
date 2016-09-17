@@ -24,152 +24,59 @@ library(DT)
 ```{r, include=F}
 acs14pusa <- read_csv("./data/ss14pusa.csv", guess_max = 10000)
 acs14pusb <- read_csv("./data/ss14pusb.csv", guess_max = 10000)
+
+
 ```
 
 ```{r}
-datatable(head(acs13husa,50), options = list(scrollX=T, pageLength = 10))
+
+datatable(head(acs14pusa,50), options = list(scrollX=T, pageLength = 10))
 ```
 
-## Basic information about data
+## Basic information about original data
 ```{r,message=F}
-dim(acs13husa)
+dim(acs14pusa)
+dim(acs14pusb)
 ```
 
-## Using survey weights
-- In this data set, there are some weight variables. 
-- This is because American Community Survey is based on a stratified household sample, rather than a simple random sample. 
-- To adjust for the unequal selection probability of individuals, weights are introduced. 
-- We should use `WGTP` for estimates. 
-- And use weight replicates `wgtp1`-`wgtp80` for standard error estimates. 
-- Reference: https://usa.ipums.org/usa/repwt.shtml
+## Select relevant columns to reduce memory usage.
+```{r,message=F}
+relevant.columns <- c("SERIALNO", "ST", "SEX", "AGEP", "SCHL", "FOD1P", "FOD2P", "WKHP", "WAGP", "ESR",
+                      "PINCP", "PERNP", "JWMNP")
+acs14pusa.cols <- acs14pusa[,colnames(acs14pusa)%in%relevant.columns]
+acs14pusb.cols <- acs14pusb[,colnames(acs14pusb)%in%relevant.columns]
+```
 
-## The `dplyr` package
-Dplyr aims to provide a function for each basic verb of data manipulation.
-
-- `filter()`
-- `arrange()`
-- `select()`
-- `distinct()`
-- `mutate()`
-- `summarise()`
-- `sample_n()` and `sample_frac()`
-
+## Bind part a and b, and get basic information
+```{r,message=F}
+acs14pus <- rbind(acs14pusa.cols, acs14pusb.cols)
+dim(acs14pus)
+```
 
 ## Add state names and abbreviations
+Credist to Arnold Chua Lau (Spring 2016).
 
 ```{r, message=F}
-ST.anno=read_csv("./data/statenames.csv")
-ST.anno=mutate(ST.anno, STabbr=abbr, STname=name)
+ST.anno = read_csv("./data/statenames.csv")
+ST.anno = mutate(ST.anno, STabbr=abbr, STname=name)
 
-acs13husa=mutate(acs13husa, STnum=as.numeric(ST))
-acs13husa <- left_join(acs13husa, ST.anno, by = c("STnum" = "code"))
+acs14pus = mutate(acs14pus, STnum = as.numeric(ST))
+acs14pus <- left_join(acs14pus, ST.anno, by = c("STnum" = "code"))
 
-select(sample_n(acs13husa,5), starts_with("ST"))
-```
-The above codes were contributed by Arnold Chua Lau (Spring 2016).
-
-## Pipeline operator
-
-The same codes above can be re-arranged using the pipeline operator `%>%` to improve readability of your codes. 
-
-```{r, message=F}
-acs13husa%>%
-  sample_n(5) %>%
-  select(starts_with("ST"))
-```
-
-## Pipeline basic analysis
-
-Building types (BLD)
-01 .Mobile home or trailer
-02 .One-family house detached
-03 .One-family house attached
-04 .2 Apartments
-05 .3-4 Apartments
-06 .5-9 Apartments
-07 .10-19 Apartments
-08 .20-49 Apartments
-09 .50 or more apartments
-10 .Boat, RV, van, etc.
-
-```{r}
-table(acs13husa$BLD)
+select(sample_n(acs14pus,5), starts_with("ST"))
 ```
 
 
-```{r, message=F}
-mobilehome=
-  acs13husa %>%
-  filter(BLD == "01") %>%
-  group_by(STabbr) %>%
-  summarize(
-    AvgPrice = mean(as.numeric(MHP), na.rm=T),
-    MedianPrice = as.numeric(median(as.numeric(MHP), na.rm=T)),
-    Count = n()
-  ) %>%
-  arrange(desc(Count))
-```
+## Summary statistics / Boxplots (Jaime)
 
-## Simple plot
+## For whole population
 
-```{r, message=FALSE, fig.height=4, fig.width=7}
-barplot(mobilehome$Count, names.arg=mobilehome$STabbr, 
-        cex.names=0.9)
-```
+## For each state
 
-## Simple plot
-```{r, message=FALSE}
-plot(c(0,nrow(mobilehome)), 
-     c(min(mobilehome$MedianPrice), 
-       max(mobilehome$MedianPrice)*1.05), type="n",
-     xlab="States",
-     ylab="Mobile Home Prices")
-points(1:nrow(mobilehome), mobilehome$MedianPrice, col=2, pch=16)
-points(1:nrow(mobilehome), mobilehome$AvgPrice, col=4, pch=16)
-segments(1:nrow(mobilehome), mobilehome$MedianPrice,
-      1:nrow(mobilehome), mobilehome$AvgPrice)
-text(1:nrow(mobilehome)+0.35, 
-     (mobilehome$MedianPrice+mobilehome$AvgPrice)/2, 
-     mobilehome$STabbr, cex=0.7)
-```
+## For each educational attainment
 
-## Put together summary data
-```{r, message=F}
-VALP.sum=summarise(group_by(acs13husa, STabbr), 
-                     weighted.mean(as.numeric(VALP), 
-                                   as.numeric(WGTP), 
-                                   na.rm=T))
-FINCP.sum=summarise(group_by(acs13husa, STabbr), 
-                     weighted.mean(as.numeric(FINCP), 
-                                   as.numeric(WGTP), na.rm=T))
-MRGP.sum=summarise(group_by(acs13husa, STabbr), 
-                     weighted.mean(as.numeric(MRGP), 
-                                   as.numeric(WGTP), na.rm=T))
-sum.data=data.frame(abbr=unlist(VALP.sum[,1]), 
-                    VALP=unlist(VALP.sum[,2]),
-                    FINCP=unlist(FINCP.sum[,2]),
-                    MRGP=unlist(MRGP.sum[,2]))
-sum.data[,-1]=round(sum.data[,-1], digits=2)
-```
 
-## Simple Google Visualization
 
-We will use the `googleVis` package to achieve simple interactive visualization (it requires internet connectivity).
+## Choropleth maps of US states (Ying)
 
-```{r, message=F}
-library(googleVis)
-op <- options(gvis.plot.tag='chart')
-Bubble <- gvisBubbleChart(sum.data, idvar="abbr", 
-                          xvar="FINCP", yvar="VALP",
-                          colorvar="",
-                          sizevar="MRGP",
-                          options=list(width="1200px", 
-                                       height="900px",
-                                       sizeAxis = '{minValue: 0,
-                                       maxSize: 15}'))
-```
 
-## Simple Google Visualization
-```{r, results='asis', tidy=TRUE, message=FALSE, fig.width=7}
-plot(Bubble)
-```
