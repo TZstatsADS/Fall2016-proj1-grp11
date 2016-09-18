@@ -12,20 +12,21 @@ knitr::opts_chunk$set(echo = TRUE)
 ###We first select the variables which we would use in the analysis.
 ####Include:
 
-Variables     | Dictionary
-------------- | -------------
-SERIALNO      | Unique code for person
-ST            | State Code
-SEX           | Gender
-AGEP          | Age
-SCHL          | Educational Attainment
-FOD1P         | Field of Degree - First Entry
-FOD1P         | Field of Degree - Second Entry
-WKHP          | Hours Worked per Week
-ESR           | Employment Status Recode
-PINCP         | Total Person's Income
-PERCP         | Total Person's Earning
-
+ Variables     | Dictionary
+ ------------- | -------------
+1. SERIALNO      | Unique code for person
+2. ST            | State Code
+3. SEX           | Gender
+4. AGEP          | Age
+5. SCHL          | Educational Attainment
+6. FOD1P         | Field of Degree - First Entry
+7. FOD1P         | Field of Degree - Second Entry
+8. WKHP          | Hours Worked per Week
+9. WAGP          | Wages or salary income past 12 months
+10.ESR           | Employment Status Recode
+11.PINCP         | Total Person's Income
+12.PERCP         | Total Person's Earning
+13.JWMNP         | Travel time to work
 
 ###Here we merge the a part and b part data into one dataset:Proj_1
 
@@ -34,13 +35,134 @@ setwd("~/Desktop/csv_pus")
 Origdata1<-read.csv("ss14pusa.csv",header=T)
 Proj_1a<-cbind(Origdata1$SERIALNO,Origdata1$ST,Origdata1$SEX,
                Origdata1$AGEP,Origdata1$SCHL,Origdata1$FOD1P,Origdata1$FOD2P,
-               Origdata1$WKHP,Origdata1$ESR,Origdata1$PINCP,Origdata1$PERNP)
+               Origdata1$WKHP,Origdata1$WAGP,Origdata1$ESR,Origdata1$PINCP,
+               Origdata1$PERNP,Origdata1$JWMNP)
 Origdata2<-read.csv("ss14pusb.csv",header=T)
 Proj_1b<-cbind(Origdata2$SERIALNO,Origdata2$ST,Origdata2$SEX,
                Origdata2$AGEP,Origdata2$SCHL,Origdata2$FOD1P,Origdata2$FOD2P,
-               Origdata2$WKHP,Origdata2$ESR,Origdata2$PINCP,Origdata2$PERNP)
+               Origdata2$WKHP,Origdata1$WAGP,Origdata2$ESR,Origdata2$PINCP,
+               Origdata2$PERNP,Origdata1$JWMNP)
 Proj_1<-rbind(Proj_1a,Proj_1b)
 ```
+
+data <- Proj_1
+
+## States map of average income
+
+subdata1 <- data[,c(2,11)]
+subdata1 <- subdata1[which(subdata1[,2]>0),]
+STcode <- c(1,2,4,5,6,8,9,10,12,13,15:42,44:51,53:56)
+
+STincome <- rep(0,50)
+for(i in 1:50)
+{
+  STincome[i] <- mean(subdata1[which(subdata1[,1]==STcode[i]),2])
+}
+
+library(plotly)
+l <- list(color = toRGB("white"), width = 2)
+g <- list(
+  scope = 'usa',
+  projection = list(type = 'albers usa'),
+  showlakes = TRUE,
+  lakecolor = toRGB('white')
+)
+df <- read.csv("https://raw.githubusercontent.com/plotly/datasets/master/2011_us_ag_exports.csv")
+map1 <- cbind(df[,1:2],STincome)
+
+plot_ly(map1, z = map1[,3], locations = code, type = 'choropleth',
+        locationmode = 'USA-states', color = map1[,3], colors = 'Greens',
+        marker = list(line = l), colorbar = list(title = "USD"))%>%
+  layout(title = '2014 US averge personal income by State', geo = g)
+
+## States map of weekly working hours
+subdata3 <- data[,c(2,8)]
+subdata3 <- subdata3[which(subdata3[,2]>0),]
+STworkt <- rep(0,50)
+for(i in 1:50)
+{
+  STworkt[i] <- mean(subdata3[which(subdata3[,1]==STcode[i]),2])
+}
+
+library(plotly)
+l <- list(color = toRGB("white"), width = 2)
+g <- list(
+  scope = 'usa',
+  projection = list(type = 'albers usa'),
+  showlakes = TRUE,
+  lakecolor = toRGB('white')
+)
+df <- read.csv("https://raw.githubusercontent.com/plotly/datasets/master/2011_us_ag_exports.csv")
+map2 <- cbind(df[,1:2],STworkt)
+
+plot_ly(map2, z = map2[,3], locations = code, type = 'choropleth',
+        locationmode = 'USA-states', color = map2[,3], colors = 'Reds',
+        marker = list(line = l), colorbar = list(title = "HOURS"))%>%
+  layout(title = '2014 US averge personal working time by State', geo = g)
+
+## 3D plot on income vs education level and working time
+## without gender
+subdata2<- data[,c(5,8,11)]
+subdata2 <- subdata2[which(rowSums(subdata2)>0),]
+max(subdata2[,2])
+max(subdata2[,1])
+min(subdata2[,2])
+min(subdata2[,1])
+income_mat <- matrix(0,nrow=8,ncol=10)
+for(i in 1:8){
+  for(j in 1:10){
+    index <- which(subdata2[,1]>3*i-3 & subdata2[,1]<3*i+1 & subdata2[,2]>10*j-10 & subdata2[,2]<10*j+1)
+    income_mat[i,j] <- mean(subdata2[index,3])
+  }
+}
+plot_ly(z=income_mat,type="surface")
+
+## with gender (2 level plot)
+subdata4<- data[,c(5,8,11,3)]
+subdata4 <- subdata4[which(rowSums(subdata4)>0),]
+max(subdata4[,2])
+max(subdata4[,1])
+min(subdata4[,2])
+min(subdata4[,1])
+income_mat_male <- matrix(0,nrow=8,ncol=10)
+income_mat_female <- matrix(0,nrow=8,ncol=10)
+for(i in 1:8){
+  for(j in 1:10){
+    index <- which(subdata4[,1]>3*i-3 & subdata4[,1]<3*i+1 &
+                    subdata4[,2]>10*j-10 & subdata4[,2]<10*j+1 &
+                     subdata4[,4]==1)
+    income_mat_male[i,j] <- mean(subdata4[index,3])
+  }
+}
+for(i in 1:8){
+  for(j in 1:10){
+    index <- which(subdata4[,1]>3*i-3 & subdata4[,1]<3*i+1 &
+                     subdata4[,2]>10*j-10 & subdata4[,2]<10*j+1 &
+                     subdata4[,4]==2)
+    income_mat_female[i,j] <- mean(subdata4[index,3])
+  }
+}
+
+plot_ly(z=income_mat_male,type="surface",showscale=FALSE) %>%
+  add_trace(z=income_mat_female, type="surface", showscale=FALSE, opacity=0.98)
+
+## 3D plot on income vs age and working time
+subdata2<- data[,c(4,8,11)]
+subdata2 <- subdata2[which(rowSums(subdata2)>0),]
+max(subdata2[,2])
+max(subdata2[,1])
+min(subdata2[,2])
+min(subdata2[,1])
+income_mat <- matrix(0,nrow=17,ncol=10)
+for(i in 1:17){
+  for(j in 1:10){
+    index <- which(subdata2[,1]>5*i+10 & subdata2[,1]<5*i+16 & subdata2[,2]>10*j-10 & subdata2[,2]<10*j+1)
+    income_mat[i,j] <- mean(subdata2[index,3])
+  }
+}
+plot_ly(z=income_mat,type="surface")
+
+
 
 
 
