@@ -66,6 +66,16 @@ acs14pus <- left_join(acs14pus, ST.anno, by = c("STnum" = "code"))
 select(sample_n(acs14pus,5), starts_with("ST"))
 ```
 
+## Write result to a csv file. So we do not need to build them again (takes 30 min in a laptop)
+```{r,message=F}
+write_csv(x = acs14pus, path = "./output/ss14pus_columns.csv" )
+```
+
+## Read csv file. If already present, we can skip all steps above.
+```{r,message=F}
+acs14pus <- read_csv(file = "./output/ss14pus_columns.csv" )
+```
+
 
 ## Summary statistics / Boxplots (Jaime)
 
