@@ -69,28 +69,28 @@ JWMNP         | not a worker or worker who worked at home
 Therefore in the next analysis, we have to pay attention to  the data meanings.
 
 1.What influences people's income
-+1.1 Description of income
-+1.2 Female and Male's Income.
-+1.3 Age and Income
-+1.4 Education and Income
-+1.5 Occupation and Income
-+1.6 Work Hour and Income
-+1.7 Travel Work Time and Income
-+1.8 States and Income
+  +1.1 Description of income
+  +1.2 Female and Male's Income.
+  +1.3 Age and Income
+  +1.4 Education and Income
+  +1.5 Occupation and Income
+  +1.6 Work Hour and Income
+  +1.7 Travel Work Time and Income
+  +1.8 States and Income
 
 2.Employment status in the US
-+2.1 Description of Employment status
-+2.2 Female and Male's Employment status
-+2.3 Education and Employment status
-+2.4 Occupation and Employment status
-+2.5 States and Employment status
+  +2.1 Description of Employment status
+  +2.2 Female and Male's Employment status
+  +2.3 Education and Employment status
+  +2.4 Occupation and Employment status
+  +2.5 States and Employment status
 
 3.Are incomes and employment rate in the direct proportion?
-+3.1 Age-Income-Employment rate
-+3.2 Gender-Income-Employment rate
-+3.3 Education-Income-Employment rate
-+3.4 Occupation-Income-Employment rate
-+3.5 States-Income-Employment rate
+  +3.1 Age-Income-Employment rate
+  +3.2 Gender-Income-Employment rate
+  +3.3 Education-Income-Employment rate
+  +3.4 Occupation-Income-Employment rate
+  +3.5 States-Income-Employment rate
 
 ## 1.8 States map of average income
 ```{r}
