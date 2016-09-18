@@ -14,76 +14,151 @@ The main assumption is that quality of life is directly proportional to with Sal
 
 
 ## Load the libraries and data
-Here we load the data from a secure dropbox link. 
+
 ```{r, message=F}
 library(dplyr)
 library(readr)
 library(DT)
+library(plotly)
+library(ggplot2)
+library(RColorBrewer)
+
+load.data <- FALSE
 ```
 
 ```{r, include=F}
-acs14pusa <- read_csv("./data/ss14pusa.csv", guess_max = 10000)
-acs14pusb <- read_csv("./data/ss14pusb.csv", guess_max = 10000)
+if(load.data){
+  acs14pusa <- read_csv("./data/ss14pusa.csv", guess_max = 10000)
+  acs14pusb <- read_csv("./data/ss14pusb.csv", guess_max = 10000)
+
+} else {
+  acs14pus <- read_csv(file = "./output/ss14pus_columns.csv" )
+}
 
 
 ```
 
 ```{r}
-
-datatable(head(acs14pusa,50), options = list(scrollX=T, pageLength = 10))
+if(load.data){
+  datatable(head(acs14pusa,50), options = list(scrollX=T, pageLength = 10))
+}
 ```
 
 ## Basic information about original data
 ```{r,message=F}
-dim(acs14pusa)
-dim(acs14pusb)
+if(load.data){
+  dim(acs14pusa)
+  dim(acs14pusb)
+}
 ```
 
 ## Select relevant columns to reduce memory usage.
 ```{r,message=F}
-relevant.columns <- c("SERIALNO", "ST", "SEX", "AGEP", "SCHL", "FOD1P", "FOD2P", "WKHP", "WAGP", "ESR",
-                      "PINCP", "PERNP", "JWMNP")
-acs14pusa.cols <- acs14pusa[,colnames(acs14pusa)%in%relevant.columns]
-acs14pusb.cols <- acs14pusb[,colnames(acs14pusb)%in%relevant.columns]
+if(load.data){
+  relevant.columns <- c("SERIALNO", "ST", "SEX", "AGEP", "SCHL", "FOD1P", "FOD2P", "WKHP", "WAGP", "ESR",
+                        "PINCP", "PERNP", "JWMNP")
+  acs14pusa.cols <- acs14pusa[,colnames(acs14pusa)%in%relevant.columns]
+  acs14pusb.cols <- acs14pusb[,colnames(acs14pusb)%in%relevant.columns]
+  
+  rm(acs14pusa, acs14pusb)
+  gc()
+}
 ```
 
 ## Bind part a and b, and get basic information
 ```{r,message=F}
-acs14pus <- rbind(acs14pusa.cols, acs14pusb.cols)
-dim(acs14pus)
+if(load.data){
+  acs14pus <- rbind(acs14pusa.cols, acs14pusb.cols)
+  dim(acs14pus)
+}
+
 ```
 
 ## Add state names and abbreviations
-Credist to Arnold Chua Lau (Spring 2016).
+Credits to Arnold Chua Lau (Spring 2016).
 
 ```{r, message=F}
-ST.anno = read_csv("./data/statenames.csv")
-ST.anno = mutate(ST.anno, STabbr=abbr, STname=name)
-
-acs14pus = mutate(acs14pus, STnum = as.numeric(ST))
-acs14pus <- left_join(acs14pus, ST.anno, by = c("STnum" = "code"))
-
-select(sample_n(acs14pus,5), starts_with("ST"))
+if(load.data){  
+  ST.anno = read_csv("./data/statenames.csv")
+  ST.anno = mutate(ST.anno, STabbr=abbr, STname=name)
+  
+  acs14pus = mutate(acs14pus, STnum = as.numeric(ST))
+  acs14pus <- left_join(acs14pus, ST.anno, by = c("STnum" = "code"))
+  
+  select(sample_n(acs14pus,5), starts_with("ST"))
+}
 ```
+
+## Convert data
+
+```{r, message=F}
+
+acs14pus$JWMNP <- as.numeric(acs14pus$JWMNP)
+acs14pus$WAGP <- as.numeric(acs14pus$WAGP)
+acs14pus$WKHP <- as.numeric(acs14pus$WKHP)
+acs14pus$STabbr <- as.factor(acs14pus$STabbr)
+
+acs14pus$WAGEHOUR <- acs14pus$WAGP / acs14pus$WKHP / 52
+
+```
+
 
 ## Write result to a csv file. So we do not need to build them again (takes 30 min in a laptop)
 ```{r,message=F}
-write_csv(x = acs14pus, path = "./output/ss14pus_columns.csv" )
-```
-
-## Read csv file. If already present, we can skip all steps above.
-```{r,message=F}
-acs14pus <- read_csv(file = "./output/ss14pus_columns.csv" )
+if(load.data){
+  write_csv(x = acs14pus, path = "./output/ss14pus_columns.csv" )
+}
 ```
 
 
-## Summary statistics / Boxplots (Jaime)
+# Summary statistics (Jaime)
 
-## For whole population
+# Summary Statistics
+```{r, message=FALSE}
+summary.mean <- acs14pus %>% group_by(STabbr) %>% summarise(mean(na.omit(JWMNP)),
+                                                       mean(na.omit(WAGP)),
+                                                       mean(na.omit(WKHP)),
+                                                       mean(na.omit(WAGEHOUR))
+                                                       )
 
-## For each state
+summary.mean[,-1] <- round(summary.mean[,-1],1)
+names(summary.mean) <- c("STabbr", "JWMNP", "WAGP", "WKHP", "WAGEHOUR")
 
-## For each educational attainment
+datatable(summary.mean, options = list(scrollX=T, pageLength = length(summary.mean$STabbr)))
+
+```
+
+
+# BoxPlot - Commute Time
+```{r, message=FALSE}
+gc()
+
+summary.mean <- summary.mean[order(summary.mean$JWMNP),]
+acs14pus$STabbr <- factor(acs14pus$STabbr, levels = summary.mean$STabbr)
+
+plot_ly(x = acs14pus$STabbr , y = acs14pus$JWMNP , type = "box") %>%
+  layout(title = "Commute time per State",
+         xaxis = list(title ="State"),
+         yaxis = list(title = "Commute time (minutes)")
+         )
+
+
+
+```
+
+# BoxPlot - Wage per Hour (Jaime)
+# JG: I am not convinced of these data values. DC is far too high!
+
+```{r, message=FALSE}
+plot_ly(x = acs14pus$STabbr , y = acs14pus$WAGP , type = "box") %>%
+  layout(title = "12-Month Wage per State",
+         scene = list(
+           xaxis = list(title ="State"),
+           yaxis = list(title = "Wage")
+         ))
+
+```
+
 
 
 
