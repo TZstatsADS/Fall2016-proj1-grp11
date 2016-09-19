@@ -45,6 +45,23 @@ Proj_1b<-cbind(Origdata2$SERIALNO,Origdata2$ST,Origdata2$SEX,
 Proj_1<-rbind(Proj_1a,Proj_1b)
 ```
 
+Name the variable.
+```{r}
+SERIALNO<-Proj_1[,1]
+ST<-Proj_1[,2] #State Code
+SEX<-Proj_1[,3]#Gender
+AGEP<-Proj_1[,4]# Age
+SCHL<-Proj_1[,5]#Educational Attainment
+FOD1P<-Proj_1[,6]#Field of Degree - First Entry
+FOD2P<-Proj_1[,7]#Field of Degree - Second Entry
+WKHP<-Proj_1[,8]#Hours Worked per Week
+WAGP<-Proj_1[,9]#Wages or salary income
+ESR<-Proj_1[,10]#Employment Status Recode
+PINCP<-Proj_1[,11]#Total Person's Income
+PERNP<-Proj_1[,12]#Total Person's Earning
+JWMNP<-Proj_1[,13]#Travel time to work
+```
+
 
 
 Here we have to read the dictionary carefully since there are NA in the columns are actually have means.
@@ -92,6 +109,44 @@ Therefore in the next analysis, we have to pay attention to  the data meanings.
   + 3.4 Occupation-Income-Employment rate
   + 3.5 States-Income-Employment rate
 
+###1.2&1.3
+####Gender earnings disparity descending  by age.
+```{r}  
+subdata5 <-  Proj_1[,c(3,4,11)] # sex age income
+male <- subdata5[which(subdata5[,1]==1),2:3] ## age income
+female <- subdata5[which(subdata5[,1]==2),2:3]
+male <- male[which(male[,2]>0),]
+female <- female[which(female[,2]>0),]
+
+male_av <- matrix(c(15:96,rep(0,82)),ncol=2)
+female_av <- matrix(c(15:96,rep(0,82)),ncol=2)
+for (i in 1:82)
+{
+  male_av[i,2] <- mean(male[which(male[,1]==i+14),2])
+  female_av[i,2] <- mean(female[which(female[,1]==i+14),2])
+}
+male_av1 <- cbind(rep(1,82),male_av)
+female_av1 <- cbind(rep(2,82),female_av)
+
+age<-male_av1[,2]
+male<-male_av1[,3]
+female<-female_av1[,3]
+
+data1<-cbind(age,male,female)
+data1<-as.data.frame(data1)
+gather(data1, Sex, value, female, male) %>%
+  plot_ly(x = value, y = age, mode = "markers",
+          color = Sex, colors = c("pink", "blue")) %>%
+  add_trace(x = value, y = age, mode = "lines",
+            group = age, showlegend = F, line = list(color = "gray")) %>%
+  layout(
+    title = "Gender earnings disparity",
+    xaxis = list(title = "Annual Salary (in thousands)"),
+    margin = list(l = 65)
+  )
+```  
+
+
 ## 1.8 States map of average income
 ```{r}
 data <- Proj_1
@@ -121,6 +176,72 @@ plot_ly(map1, z = map1[,3], locations = code, type = 'choropleth',
         marker = list(line = l), colorbar = list(title = "USD"))%>%
   layout(title = '2014 US averge personal income by State', geo = g)
 ```
+##2.Employment status in US
+Unemployment rate is defined most basically as the percentage of the total labor force that is unemployed but actively seeking employment and willing to work.
+
+That is. Unemployment rate=Unemployed/Total labor force.
+
+###2.1 Description of Employment status
+```{r}
+us_emp<-nrow(as.matrix(Proj_1[which(ESR==1|ESR==2|ESR==4|ESR==5)]))
+us_unemp<-nrow(as.matrix(Proj_1[which(ESR==3)]))
+us_rate<- us_unemp/(us_emp+us_unemp)
+us_rate
+```
+
+###2.2 Female and Male's Employment status
+```{r}
+male_emp<-nrow(as.matrix(Proj_1[which(SEX==1&
+                                       (ESR==1|ESR==2|ESR==4|ESR==5))]))
+male_unemp<-nrow(as.matrix(Proj_1[which(ESR==3&SEX==1)]))
+female_emp<-nrow(as.matrix(Proj_1[which(SEX==2&
+                                       (ESR==1|ESR==2|ESR==4|ESR==5))]))
+female_unemp<-nrow(as.matrix(Proj_1[which(ESR==3&SEX==2)]))
+male_rate<- male_unemp/(male_emp+male_unemp)
+female_rate<- female_unemp/(female_emp+female_unemp)
+male_rate
+female_rate
+```
+
+###2.3  Education and Employment status
+```{r}
+unique(SCHL)
+edu<-matrix()
+edu_emp<-vector()
+edu_unemp<-vector()
+
+for (i in 1:23){
+  edu_emp[i]<-nrow(as.matrix(Proj_1[which(SCHL==i&(ESR==1|ESR==2|ESR==4|ESR==5))]))
+  edu_unemp[i]<-nrow(as.matrix(Proj_1[which(ESR==3&SCHL==i)]))
+  edu[i]<-edu_unemp[i]/(edu_emp[i]+edu_unemp[i])
+}
+sum(edu_emp)
+```
+
+
+###Some vitualiztion method 
+```{r}
+library(plotly)
+set.seed(100)
+d <- Proj_1 [sample(nrow( Proj_1 ), 5000), ]
+plot_ly(x = d[,4], y = d[,11], 
+        mode = "markers", color = d[,3], size = d[,4])
+
+```
+
+```{r}
+
+d <- Proj_1 [sample(nrow( Proj_1 ), 50000), ]
+plot_ly( x = d[,4], y = d[,11], mode = "markers",
+        color = as.factor(d[,6]), colors = "Set2")
+
+```
+
+
+
+
+
+
 
 ## States map of weekly working hours
 
