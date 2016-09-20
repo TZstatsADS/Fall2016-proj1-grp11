@@ -170,22 +170,26 @@ summary.median.2 <- acs14pus %>% group_by(SCHL, INDP) %>% summarise(median(na.om
                                                        median(na.omit(WKHP)),
                                                        median(na.omit(WAGEHOUR))
                                                        )
+summary.median.2 <- na.omit(summary.median.2)
 
 summary.median.2[,-c(1,2)] <- round(summary.median.2[,-c(1,2)],1)
 names(summary.median.2) <- c("SCHL", "INDP", "JWMNP", "WAGP", "WKHP", "WAGEHOUR")
 summary.median.2$SCHL <- as.factor(summary.median.2$SCHL)
 summary.median.2$INDP <- as.integer(summary.median.2$INDP)
+summary.median.2$SCHL <- as.integer(summary.median.2$SCHL)
+
 
 summary.median.2 <- na.omit(summary.median.2)
 
 industry.categories = read_csv("./data/industry_codes.csv")
-
-summary.median.2 = mutate(summary.median.2, INDP = as.numeric(INDP))
 summary.median.2 <- left_join(summary.median.2, industry.categories, by = c("INDP" = "code"))
+
+education.categories = read_csv("./data/education_codes.csv")
+summary.median.2 <- left_join(summary.median.2, education.categories, by = c("SCHL" = "code"))
 
 
 plot_ly(z = summary.median.2$JWMNP, 
-        x = summary.median.2$SCHL,
+        x = summary.median.2$education,
         y = summary.median.2$industry,
         type = "heatmap") %>%
   layout(title = "Commute time by Education Attainment and Industry",
