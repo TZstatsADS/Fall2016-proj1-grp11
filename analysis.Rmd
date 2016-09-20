@@ -98,8 +98,18 @@ acs14pus$JWMNP <- as.numeric(acs14pus$JWMNP)
 acs14pus$WAGP <- as.numeric(acs14pus$WAGP)
 acs14pus$WKHP <- as.numeric(acs14pus$WKHP)
 acs14pus$STabbr <- as.factor(acs14pus$STabbr)
+acs14pus$SCHL <- as.integer(acs14pus$SCHL)
 
 acs14pus$WAGEHOUR <- acs14pus$WAGP / acs14pus$WKHP / 52
+
+
+industry.categories = read_csv("./data/industry_codes.csv")
+
+education.categories = read_csv("./data/education_codes.csv")
+
+acs14pus$SCHL <- as.integer(acs14pus$SCHL)
+acs14pus <- left_join(acs14pus, education.categories, by = c("SCHL" = "code"))
+
 
 ```
 
@@ -181,17 +191,37 @@ summary.median.2$SCHL <- as.integer(summary.median.2$SCHL)
 
 summary.median.2 <- na.omit(summary.median.2)
 
-industry.categories = read_csv("./data/industry_codes.csv")
 summary.median.2 <- left_join(summary.median.2, industry.categories, by = c("INDP" = "code"))
 
-education.categories = read_csv("./data/education_codes.csv")
 summary.median.2 <- left_join(summary.median.2, education.categories, by = c("SCHL" = "code"))
+```
+
+## After US population gets a bacherlor's degree, there is a tendency tend to commute more than if you did not have the higher level degree 
+```{r}
+
+acs14pus <- acs14pus[order(acs14pus$SCHL),]
+
+plot_ly(x = acs14pus$education,
+        y = acs14pus$JWMNP,
+        type = "box",
+        sort = FALSE) %>%
+  layout(title = "Commute time by Education Attainment",
+         xaxis = list(title ="Education"),
+         yaxis = list(title = "Commute time"),
+        # width = 1000,
+        # height = 700,
+         legend = education.categories$education
+         )
 
 
+```
+
+```{r}
 plot_ly(z = summary.median.2$JWMNP, 
         x = summary.median.2$education,
         y = summary.median.2$industry,
-        type = "heatmap") %>%
+        type = "heatmap",
+        colorscale = "Hot") %>%
   layout(title = "Commute time by Education Attainment and Industry",
          xaxis = list(title ="Education"),
          yaxis = list(title = "Industry"),
@@ -201,8 +231,6 @@ plot_ly(z = summary.median.2$JWMNP,
 
 
 ```
-
-
 
 
 ## Choropleth maps of US states (Ying)
