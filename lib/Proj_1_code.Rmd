@@ -354,4 +354,66 @@ plot_ly(map1, z = map1[,3], locations = code, type = 'choropleth',
 
 ```
 
-?
+```{r}
+netfile<-matrix(0,nrow=144,ncol=3)
+colnames(netfile)<-c("source","target","value")
+netfile[,1]<-sort(rep(0:23,6))
+netfile[,2]<-rep(24:29)
+
+for (i in 1:144){
+  netfile[i,3]<-nrow(as.matrix(Proj_1[which(SCHL==(netfile[i,1]+1)&
+                                            ESR==(netfile[i,2]-23))]))
+}
+
+nodes<-as.data.frame(matrix(0,nrow=30,ncol=2))
+colnames(nodes)<-c("name","group")
+nodes[,1]<-c("a.No schooling completed",
+           "b.Nursery school/preschool",
+           "c.Kindergarten",
+           "d.Grade 1",
+           "e.Grade 2",
+           "f.Grade 3",
+           "g.Grade 4",
+           "h.Grade 5",
+           "i.Grade 6",
+           "j.Grade 7",
+           "k.Grade 8",
+           "l.Grade 9",
+           "m.Grade 10",
+           "n.Grade 11",
+           "o.Grade 12-no diploma",
+           "p.Regular high school diploma",
+           "q.GED or alternative credential",
+           "r.Some college, but less than 1 year",
+           "s.1 or more years of college credit, no degree",
+           "t.Associate's degree",
+           "u.Bachelor's degree",
+           "v.Master's degree",
+           "w.Professional degree",
+           "x.Doctorate degree",
+           "Civilian employed, at work",
+           "Civilian employed, with a job",
+           "Unemployed",
+           "Armed forces, at work",
+           "Armed forces, with a job",
+           "Not in labor force")
+
+nodes[,2]<-rep(1:30)
+
+
+netfile<-as.data.frame(netfile)
+
+sankeyNetwork(Links = netfile, Nodes = nodes, Source = "source",
+Target = "target", Value = "value", NodeID = "name",
+units = "TWh", fontSize = 12, nodeWidth = 30)
+
+netfile1<-netfile
+netfile1[,3]<-netfile[,3]/10000
+forceNetwork(Links = netfile1, Nodes = nodes, Source = "source",
+             Target = "target", Value = "value", NodeID = "name",
+             radiusCalculation = "Math.sqrt(d.nodesize)+6", 
+             Group = "group", opacity = 0.6,opacityNoHover = TRUE
+             )
+```
+
+
