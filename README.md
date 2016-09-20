@@ -4,18 +4,16 @@
 Term: Fall 2016
 
 + Team 11
-+ Project title: Quality of life across US states and Level of Education
++ Project title: Inequity distribution in our life
 + Team members:
 	+ Cen Zeng
 	+ Jaime Gacitua
-	+ HyoungMook Song
 	+ Ying Zhu
-	+ Quianquian Zhou
+	+ Yixin Sun
+	+ 
 + Project summary: 
 
-We want to find a relationship betweeen the Attained Education, State, Gender, and the quality of life of US population.
-
-The main assumption is that quality of life is directly proportional to with Salary [USD/hour] and Commute Time to work [hours].
+We want to display there exist inequity income and unemployment rate which is serious problem influence our life. Some of inequity we can improve by ourself. Some of that we can not. We wish government can improve policy to reduce this inequity. 
 
 **Contribution statement**: ([default](doc/a_note_on_contributions.md)) 
 
