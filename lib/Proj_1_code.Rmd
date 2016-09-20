@@ -1,7 +1,7 @@
 ---
 title: "ADS_Project1"
 author: "ying"
-date: "9/16/2016"
+date: "2016年9月16日"
 output: html_document
 ---
 
@@ -10,25 +10,27 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ###We first select the variables which we would use in the analysis.
-####Include:
+Include:
 
-   Variables     | Dictionary
-   ------------- | -------------
-1. SERIALNO      | Unique code for person
-2. ST            | State Code
-3. SEX           | Gender
-4. AGEP          | Age
-5. SCHL          | Educational Attainment
-6. FOD1P         | Field of Degree - First Entry
-7. FOD1P         | Field of Degree - Second Entry
-8. WKHP          | Hours Worked per Week
-9. WAGP          | Wages or salary income past 12 months
-10.ESR           | Employment Status Recode
-11.PINCP         | Total Person's Income
-12.PERCP         | Total Person's Earning
-13.JWMNP         | Travel time to work
+  Variables     | Dictionary
+  ------------- | -------------
+1.SERIALNO      | Unique code for person
+2.ST            | State Code
+3.SEX           | Gender
+4.AGEP          | Age
+5.SCHL          | Educational Attainment
+6.FOD1P         | Field of Degree - First Entry
+7.FOD1P         | Field of Degree - Second Entry
+8.WKHP          | Hours Worked per Week
+9.WAGP          | Wages or salary income
+10.ESR          | Employment Status Recode
+11.PINCP        | Total Person's Income
+12.PERNP        | Total Person's Earning
+13.JWMNP        |  Travel time to work
 
-###Here we merge the a part and b part data into one dataset:Proj_1
+
+
+Here we merge the a part and b part data into one dataset:Proj_1
 
 ```{r}
 setwd("~/Desktop/csv_pus")
@@ -40,11 +42,14 @@ Proj_1a<-cbind(Origdata1$SERIALNO,Origdata1$ST,Origdata1$SEX,
 Origdata2<-read.csv("ss14pusb.csv",header=T)
 Proj_1b<-cbind(Origdata2$SERIALNO,Origdata2$ST,Origdata2$SEX,
                Origdata2$AGEP,Origdata2$SCHL,Origdata2$FOD1P,Origdata2$FOD2P,
-               Origdata2$WKHP,Origdata1$WAGP,Origdata2$ESR,Origdata2$PINCP,
-               Origdata2$PERNP,Origdata1$JWMNP)
+               Origdata2$WKHP,Origdata2$WAGP,Origdata2$ESR,Origdata2$PINCP,
+               Origdata2$PERNP,Origdata2$JWMNP)
 Proj_1<-rbind(Proj_1a,Proj_1b)
-```
 
+colnames(Proj_1) <- c("SERIALNO","ST","SEX","AGEP","SCHL",
+                      "FOD1P","FOD2P","WKHP","WAGP","ESR",
+                      "PINCP","PERNP","JWMNP")
+```
 Name the variable.
 ```{r}
 SERIALNO<-Proj_1[,1]
@@ -61,8 +66,6 @@ PINCP<-Proj_1[,11]#Total Person's Income
 PERNP<-Proj_1[,12]#Total Person's Earning
 JWMNP<-Proj_1[,13]#Travel time to work
 ```
-
-
 
 Here we have to read the dictionary carefully since there are NA in the columns are actually have means.
 The meanings in the NA in different variables:
@@ -108,7 +111,8 @@ Therefore in the next analysis, we have to pay attention to  the data meanings.
   + 3.3 Education-Income-Employment rate
   + 3.4 Occupation-Income-Employment rate
   + 3.5 States-Income-Employment rate
-
+  
+  
 ###1.2&1.3
 ####Gender earnings disparity descending  by age.
 ```{r}  
@@ -139,47 +143,27 @@ gather(data1, Sex, value, female, male) %>%
           color = Sex, colors = c("pink", "blue")) %>%
   add_trace(x = value, y = age, mode = "lines",
             group = age, showlegend = F, line = list(color = "gray")) %>%
-  layout(
-    title = "Gender earnings disparity",
-    xaxis = list(title = "Annual Salary (in thousands)"),
+  layout(title = "Gender earnings disparity",
+    xaxis = list(title = "Annual Income"),
     margin = list(l = 65)
   )
 ```  
 
 
-## 1.8 States map of average income
-```{r}
-data <- Proj_1
-subdata1 <- data[,c(2,11)]
-subdata1 <- subdata1[which(subdata1[,2]>0),]
-STcode <- c(1,2,4,5,6,8,9,10,12,13,15:42,44:51,53:56)
 
-STincome <- rep(0,50)
-for(i in 1:50)
-{
-  STincome[i] <- mean(subdata1[which(subdata1[,1]==STcode[i]),2])
-}
-
-library(plotly)
-l <- list(color = toRGB("white"), width = 2)
-g <- list(
-  scope = 'usa',
-  projection = list(type = 'albers usa'),
-  showlakes = TRUE,
-  lakecolor = toRGB('white')
-)
-df <- read.csv("https://raw.githubusercontent.com/plotly/datasets/master/2011_us_ag_exports.csv")
-map1 <- cbind(df[,1:2],STincome)
-
-plot_ly(map1, z = map1[,3], locations = code, type = 'choropleth',
-        locationmode = 'USA-states', color = map1[,3], colors = 'Greens',
-        marker = list(line = l), colorbar = list(title = "USD"))%>%
-  layout(title = '2014 US averge personal income by State', geo = g)
-```
 ##2.Employment status in US
 Unemployment rate is defined most basically as the percentage of the total labor force that is unemployed but actively seeking employment and willing to work.
 
 That is. Unemployment rate=Unemployed/Total labor force.
+
+
+2.Employment status in the US
+  + 2.1 Description of Employment status
+  + 2.2 Female and Male's Employment status
+  + 2.3 Education and Employment status
+  + 2.4 Occupation and Employment status
+  + 2.5 States and Employment status
+  
 
 ###2.1 Description of Employment status
 ```{r}
@@ -205,55 +189,152 @@ female_rate
 
 ###2.3  Education and Employment status
 ```{r}
-unique(SCHL)
 edu<-matrix()
 edu_emp<-vector()
 edu_unemp<-vector()
 
-for (i in 1:23){
+for (i in 1:24){
   edu_emp[i]<-nrow(as.matrix(Proj_1[which(SCHL==i&(ESR==1|ESR==2|ESR==4|ESR==5))]))
   edu_unemp[i]<-nrow(as.matrix(Proj_1[which(ESR==3&SCHL==i)]))
   edu[i]<-edu_unemp[i]/(edu_emp[i]+edu_unemp[i])
 }
-sum(edu_emp)
-```
+
+edu<-cbind(sort(unique(SCHL)),edu)
+colnames(edu)<-c("education attainment","unemployment rate")
 
 
-###Some vitualiztion method 
-```{r}
-library(plotly)
-set.seed(100)
-d <- Proj_1 [sample(nrow( Proj_1 ), 5000), ]
-plot_ly(x = d[,4], y = d[,11], 
-        mode = "markers", color = d[,3], size = d[,4])
-
-```
-
-```{r}
-
-d <- Proj_1 [sample(nrow( Proj_1 ), 50000), ]
-plot_ly( x = d[,4], y = d[,11], mode = "markers",
-        color = as.factor(d[,6]), colors = "Set2")
-
-```
-
-
-
-
-
-
-
-## States map of weekly working hours
-
-```{r}
-subdata3 <- data[,c(2,8)]
-subdata3 <- subdata3[which(subdata3[,2]>0),]
-STworkt <- rep(0,50)
-for(i in 1:50)
-{
-  STworkt[i] <- mean(subdata3[which(subdata3[,1]==STcode[i]),2])
+###replace the number into the charactor
+edu_atm<-c("a.No schooling completed",
+           "b.Nursery school/preschool",
+           "c.Kindergarten",
+           "d.Grade 1",
+           "e.Grade 2",
+           "f.Grade 3",
+           "g.Grade 4",
+           "h.Grade 5",
+           "i.Grade 6",
+           "j.Grade 7",
+           "k.Grade 8",
+           "l.Grade 9",
+           "m.Grade 10",
+           "n.Grade 11",
+           "o.Grade 12-no diploma",
+           "p.Regular high school diploma",
+           "q.GED or alternative credential",
+           "r.Some college, but less than 1 year",
+           "s.1 or more years of college credit, no degree",
+           "t.Associate's degree",
+           "u.Bachelor's degree",
+           "v.Master's degree",
+           "w.Professional degree",
+           "x.Doctorate degree")
+edu<-as.data.frame(edu)
+edu[,1]<-as.character(edu[,1])
+for (i in 1:24){
+  edu[i,1]<-edu_atm[i]
 }
 
+```
+
+###2.2 & 2.3  Gender & Education -->Employment status
+```{r}
+
+edu_female_emp<-vector()
+edu_female_unemp<-vector()
+edu_male_emp<-vector()
+edu_male_unemp<-vector()
+edu_female<-matrix()
+edu_male<-matrix()
+
+for (i in 1:24){
+  edu_female_emp[i]<-nrow(as.matrix(Proj_1[which(SCHL==i&SEX==2&(ESR==1|ESR==2|ESR==4|ESR==5))]))
+  edu_female_unemp[i]<-nrow(as.matrix(Proj_1[which(ESR==3&SCHL==i&SEX==2)]))
+  edu_female[i]<-edu_female_unemp[i]/(edu_female_emp[i]+edu_female_unemp[i])
+  
+  edu_male_emp[i]<-nrow(as.matrix(Proj_1[which(SCHL==i&SEX==1&(ESR==1|ESR==2|ESR==4|ESR==5))]))
+  edu_male_unemp[i]<-nrow(as.matrix(Proj_1[which(ESR==3&SCHL==i&SEX==1)]))
+  edu_male[i]<-edu_male_unemp[i]/(edu_male_emp[i]+edu_male_unemp[i])
+}
+
+### DO NOT RUN SECOND TIME
+edu_female<-as.data.frame(cbind(sort(unique(SCHL)),edu_female,rep("female",24)))
+colnames(edu_female)<-c("education attainment","unemployment rate","filter")
+
+edu_female[,1]<-as.character(edu_female[,1])
+for (i in 1:24){
+  edu_female[i,1]<-edu_atm[i]
+}
+edu_female[,2]<-as.numeric(paste(edu_female[,2]))
+
+### DO NOT RUN SECOND TIME
+edu_male<-as.data.frame(cbind(sort(unique(SCHL)),edu_male,rep("male",24)))
+colnames(edu_male)<-c("education attainment","unemployment rate","filter")
+
+edu_male[,1]<-as.character(edu_male[,1])
+for (i in 1:24){
+  edu_male[i,1]<-edu_atm[i]
+}
+edu_male[,2]<-as.numeric(paste(edu_male[,2]))
+
+###DO NOT RUN SECOND TIME
+edu_all<-as.data.frame(cbind(edu,rep("all",24)))
+colnames(edu_all)<-c("education attainment","unemployment rate","filter")
+
+###Merge into one dataset
+edu_gender<-rbind(edu_female,edu_male,edu_all)
+
+
+###Prepare to plot
+education.attainment<-edu_gender[,1]
+unemployment.rate<-edu_gender[,2]
+filter<-edu_gender[,3]
+
+library(rbokeh)
+ 
+figure(width = NULL, height = NULL) %>%
+
+ly_points( unemployment.rate,education.attainment,data = edu_gender,
+    color = filter, glyph = filter,
+    hover = list( unemployment.rate,education.attainment))
+
+```
+
+```{r}
+library(tidyr)
+library(plotly)
+s_Women<-as.numeric(paste(edu_female[,2]))
+s_Men<-as.numeric(paste(edu_male[,2]))
+edu_gender_sub<-as.data.frame(cbind(edu_atm,s_Women,s_Men))
+
+gather(edu_gender_sub, Sex, value, s_Women, s_Men) %>%
+  plot_ly(x = value, y = edu_atm, mode = "markers",
+          color = Sex, colors = c("pink", "blue")) %>%
+  add_trace(x = value, y = edu_atm, mode = "lines",
+            group = edu_atm, showlegend = F, line = list(color = "gray")) %>%
+  layout(
+    title = "Gender earnings disparity",
+    xaxis = list(title = "Annual Salary (in thousands)"),
+    margin = list(l = 65)
+  )
+```
+
+
+###2.5 States and Employment status
+
+```{r}
+STcode <- c(1,2,4,5,6,8,9,10,12,13,15:42,44:51,53:56)
+ST_emp <-vector()
+ST_unemp<-vector()
+ST_unemp_rate<-vector()
+
+for(i in 1:50)
+{
+  ST_emp[i] <- nrow(as.matrix(Proj_1[which(ST==STcode[i]&(ESR==1|ESR==2|ESR==4|ESR==5))]))
+  ST_unemp[i] <- nrow(as.matrix(Proj_1[which(ST==STcode[i]&ESR==3)]))
+  ST_unemp_rate[i]<-ST_unemp[i] /(ST_emp[i]+ST_unemp[i])
+}
+
+###plot
 library(plotly)
 l <- list(color = toRGB("white"), width = 2)
 g <- list(
@@ -263,81 +344,14 @@ g <- list(
   lakecolor = toRGB('white')
 )
 df <- read.csv("https://raw.githubusercontent.com/plotly/datasets/master/2011_us_ag_exports.csv")
-map2 <- cbind(df[,1:2],STworkt)
+map1 <- cbind(df[,1:2],ST_unemp_rate)
 
-plot_ly(map2, z = map2[,3], locations = code, type = 'choropleth',
-        locationmode = 'USA-states', color = map2[,3], colors = 'Reds',
-        marker = list(line = l), colorbar = list(title = "HOURS"))%>%
-  layout(title = '2014 US averge personal working time by State', geo = g)
+plot_ly(map1, z = map1[,3], locations = code, type = 'choropleth',
+        locationmode = 'USA-states', color = map1[,3], colors = 'Greens',
+        marker = list(line = l), colorbar = list(title = "Unemp_ratae"))%>%
+  layout(title = '2014 US unemployment rate by State', geo = g)
+
+
 ```
 
-
-## 3D plot on income vs education level and working time
-## without gender
-```{r}
-subdata2<- data[,c(5,8,11)]
-subdata2 <- subdata2[which(rowSums(subdata2)>0),]
-max(subdata2[,2])
-max(subdata2[,1])
-min(subdata2[,2])
-min(subdata2[,1])
-income_mat <- matrix(0,nrow=8,ncol=10)
-for(i in 1:8){
-  for(j in 1:10){
-    index <- which(subdata2[,1]>3*i-3 & subdata2[,1]<3*i+1 & subdata2[,2]>10*j-10 & subdata2[,2]<10*j+1)
-    income_mat[i,j] <- mean(subdata2[index,3])
-  }
-}
-plot_ly(z=income_mat,type="surface")
-```
-
-## with gender (2 level plot)
-```{r}
-subdata4<- data[,c(5,8,11,3)]
-subdata4 <- subdata4[which(rowSums(subdata4)>0),]
-max(subdata4[,2])
-max(subdata4[,1])
-min(subdata4[,2])
-min(subdata4[,1])
-income_mat_male <- matrix(0,nrow=8,ncol=10)
-income_mat_female <- matrix(0,nrow=8,ncol=10)
-for(i in 1:8){
-  for(j in 1:10){
-    index <- which(subdata4[,1]>3*i-3 & subdata4[,1]<3*i+1 &
-                    subdata4[,2]>10*j-10 & subdata4[,2]<10*j+1 &
-                     subdata4[,4]==1)
-    income_mat_male[i,j] <- mean(subdata4[index,3])
-  }
-}
-for(i in 1:8){
-  for(j in 1:10){
-    index <- which(subdata4[,1]>3*i-3 & subdata4[,1]<3*i+1 &
-                     subdata4[,2]>10*j-10 & subdata4[,2]<10*j+1 &
-                     subdata4[,4]==2)
-    income_mat_female[i,j] <- mean(subdata4[index,3])
-  }
-}
-
-plot_ly(z=income_mat_male,type="surface",showscale=FALSE) %>%
-  add_trace(z=income_mat_female, type="surface", showscale=FALSE, opacity=0.98)
-```
-
-## 3D plot on income vs age and working time
-```{r}
-subdata2<- data[,c(4,8,11)]
-subdata2 <- subdata2[which(rowSums(subdata2)>0),]
-max(subdata2[,2])
-max(subdata2[,1])
-min(subdata2[,2])
-min(subdata2[,1])
-income_mat <- matrix(0,nrow=17,ncol=10)
-for(i in 1:17){
-  for(j in 1:10){
-    index <- which(subdata2[,1]>5*i+10 & subdata2[,1]<5*i+16 & subdata2[,2]>10*j-10 & subdata2[,2]<10*j+1)
-    income_mat[i,j] <- mean(subdata2[index,3])
-  }
-}
-plot_ly(z=income_mat,type="surface")
-```
-
-
+?
