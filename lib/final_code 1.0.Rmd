@@ -1,0 +1,473 @@
+## Preprocess data
+
+
+  Variables     | Dictionary
+  ------------- | -------------
+1.SERIALNO      | Unique code for person
+2.ST            | State Code
+3.SEX           | Gender
+4.AGEP          | Age
+5.SCHL          | Educational Attainment
+6.FOD1P         | Field of Degree - First Entry
+7.FOD1P         | Field of Degree - Second Entry
+8.WKHP          | Hours Worked per Week
+9.WAGP          | Wages or salary income
+10.ESR          | Employment Status Recode
+11.PINCP        | Total Person's Income
+12.PERNP        | Total Person's Earning
+13.JWMNP        |  Travel time to work
+
+
+```{r, echo=FALSE}
+options(warn=-1)
+setwd("~/Desktop/G5243/project1/personal data/2014 all person")
+Origdata1<-read.csv("ss14pusa.csv",header=T)
+Proj_1a<-cbind(Origdata1$SERIALNO,Origdata1$ST,Origdata1$SEX,
+               Origdata1$AGEP,Origdata1$SCHL,Origdata1$FOD1P,Origdata1$FOD2P,
+               Origdata1$WKHP,Origdata1$WAGP,Origdata1$ESR,Origdata1$PINCP,
+               Origdata1$PERNP,Origdata1$JWMNP)
+Origdata2<-read.csv("ss14pusb.csv",header=T)
+Proj_1b<-cbind(Origdata2$SERIALNO,Origdata2$ST,Origdata2$SEX,
+               Origdata2$AGEP,Origdata2$SCHL,Origdata2$FOD1P,Origdata2$FOD2P,
+               Origdata2$WKHP,Origdata2$WAGP,Origdata2$ESR,Origdata2$PINCP,
+               Origdata2$PERNP,Origdata2$JWMNP)
+Proj_1<-rbind(Proj_1a,Proj_1b)
+
+colnames(Proj_1) <- c("SERIALNO","ST","SEX","AGEP","SCHL",
+                      "FOD1P","FOD2P","WKHP","WAGP","ESR",
+                      "PINCP","PERNP","JWMNP")
+data <- Proj_1
+data1 <- Origdata1
+data2 <- Origdata2
+```
+
+```{r, echo=FALSE}
+SERIALNO<-Proj_1[,1]
+ST<-Proj_1[,2] #State Code
+SEX<-Proj_1[,3]#Gender
+AGEP<-Proj_1[,4]# Age
+SCHL<-Proj_1[,5]#Educational Attainment
+FOD1P<-Proj_1[,6]#Field of Degree - First Entry
+FOD2P<-Proj_1[,7]#Field of Degree - Second Entry
+WKHP<-Proj_1[,8]#Hours Worked per Week
+WAGP<-Proj_1[,9]#Wages or salary income
+ESR<-Proj_1[,10]#Employment Status Recode
+PINCP<-Proj_1[,11]#Total Person's Income
+PERNP<-Proj_1[,12]#Total Person's Earning
+JWMNP<-Proj_1[,13]#Travel time to work
+```
+Here we have to read the dictionary carefully since there are NA in the columns are actually have means.
+The meanings in the NA in different variables:
+
+Variables     | NA meanings
+------------- | -------------
+SERIALNO      | No NA
+ST            | No NA
+SEX           | No NA
+AGEP          | No NA
+SCHL          | Less than 3 years old
+FOD1P         | Less than bachelor's degree
+FOD1P         | Less than bachelor's degree
+WKHP          | Less than 16 years old/did not work
+WAGP          | Less than 15 years old
+ESR           | Less than 16 years old
+PINCP         | Less than 15 years old
+PERNP         | Less than 15 years old
+JWMNP         | not a worker or worker who worked at home
+
+
+## 1.Income status in US
+### 1.1 Gender, Age and Income
+```{r,echo=FALSE}
+library(ggplot2)
+library(plotly)
+data1.2 <- data[,c(3,4,11)] 
+male <- data1.2[which(data1.2[,1]==1),2:3] 
+female <- data1.2[which(data1.2[,1]==2),2:3]
+male <- male[which(male[,2]>0),]
+female <- female[which(female[,2]>0),]
+male_av <- matrix(c(seq(11,91,length=17),rep(0,17)),ncol=2)
+female_av <- matrix(c(seq(11,91,length=17),rep(0,17)),ncol=2)
+for (i in 1:17)
+{
+  male_av[i,2] <- mean(male[which(male[,1]>5*i+5 & male[,1]<5*i+11),2])
+  female_av[i,2] <- mean(female[which(female[,1]>5*i+5 & female[,1]<5*i+11),2])
+}
+male_av1 <- cbind(rep(1,17),male_av)
+female_av1 <- cbind(rep(2,17),female_av)
+final <- rbind(male_av1,female_av1)
+final <- as.data.frame(final)
+final[1:17,1] <- "male"
+final[18:34,1] <- "female"
+names(final) <- c("Gender", "Age", "Income")
+```
+```{r}
+plot_ly(data = final, x = Age, y = Income, mode = "markers", 
+        color = final[,1], size = final[,2], title="a")%>%
+  layout(title = '2014 US averge personal income by Gender and Age')
+```
+
+
+### 1.2 Education, Working Hours and Income
+```{r,echo=FALSE}
+data1.2<- data[,c(5,8,11)]
+data1.2 <- data1.2[which(rowSums(data1.2)>0),]
+INCOME <- matrix(0,nrow=8,ncol=10)
+for(i in 1:8){
+  for(j in 1:10){
+    index <- which(data1.2[,1]>3*i-3 & data1.2[,1]<3*i+1 & data1.2[,2]>10*j-10 & data1.2[,2]<10*j+1)
+    INCOME[i,j] <- mean(data1.2[index,3])
+  }
+}
+```
+```{r}
+plot_ly(z=INCOME,type="surface",colorbar = list(title = "USD"))%>%
+  layout(title = '2014 US averge personal income by Education and Working Hours', 
+         xaxis = list(title='EDU'))
+```
+
+
+### 1.3 Occupation and income
+```{r,echo=FALSE}
+subdata1.5 <- cbind(c(data1$INDP,data2$INDP),data[,11])
+subdata1.5 <- subdata1.5[which(rowSums(subdata1.5)>0),]
+ind_code <- read.csv("~/Desktop/industry_codes.csv")
+index <- rep(0,267)
+for(i in 1:267)
+{
+  index[i] <- which(unique(ind_code[,2])==ind_code[i,2])
+}
+ind_code <- cbind(index,ind_code)
+subdata1.5 <- cbind(rep(0,nrow(subdata1.5)),subdata1.5)
+for(i in 1:19)
+{
+  subdata1.5[which(subdata1.5[,2] %in% ind_code[which(ind_code[,1]==i),2]),1] <- i
+}
+INDincome <- rep(0,19)
+for(i in 1:19)
+{
+  INDincome[i] <- mean(subdata1.5[which(subdata1.5[,1]==i),3])
+}
+```
+```{r}
+barplot(sort(INDincome), horiz=T,col = "light blue",xlab = "average income",
+        main = "Industry Income", border=F,xlim=c(0,80000),
+        cex.axis=0.7,names.arg = unique(ind_code[,3])[order(INDincome)],
+        cex.names=0.6,las=1)
+```
+
+
+### 1.4 States and income
+```{r,echo=FALSE}
+subdata1 <- data[,c(2,11)]
+subdata1 <- subdata1[which(subdata1[,2]>0),]
+STcode <- c(1,2,4,5,6,8,9,10,12,13,15:42,44:51,53:56)
+
+STincome <- rep(0,50)
+for(i in 1:50)
+{
+  STincome[i] <- mean(subdata1[which(subdata1[,1]==STcode[i]),2])
+}
+
+library(plotly)
+l <- list(color = toRGB("white"), width = 2)
+g <- list(
+  scope = 'usa',
+  projection = list(type = 'albers usa'),
+  showlakes = TRUE,
+  lakecolor = toRGB('white')
+)
+df <- read.csv("https://raw.githubusercontent.com/plotly/datasets/master/2011_us_ag_exports.csv")
+map1 <- cbind(df[,1:2],STincome)
+```
+```{r}
+plot_ly(map1, z = map1[,3], locations = code, type = 'choropleth',
+        locationmode = 'USA-states', color = map1[,3], colors = 'Greens',
+        marker = list(line = l), colorbar = list(title = "USD"))%>%
+  layout(title = '2014 US averge personal income by State', geo = g)
+```
+
+
+#### 1.4.1 RPP map
+  Since different states have different cost of living level, we take 2014 RPP (Regional Price Parities) in to consideration. The following maps are associated with RPP and Adjusted Income.
+  
+```{r,echo=FALSE}
+RPP <- c(87.8, 105.7, 96.4, 87.5, 112.4,
+         102.0, 108.8, 101.9, 99.1, 92.0,
+         116.8, 93.4, 100.7, 91.4, 90.3,
+         90.7, 88.7, 91.4, 97.1, 110.3,
+         107.1, 94.1, 97.6, 86.7, 89.4,
+         94.2, 90.6, 97.7, 105.2, 114.5,
+         95.0, 115.7, 91.7, 91.5, 89.3,
+         90.1, 99.0, 98.2, 98.7, 90.5,
+         88.0, 90.2, 96.6, 97.0, 101.2,
+         102.6, 103.8, 88.9, 93.4, 96.2)
+map1.7 <- cbind(df[,1:2],RPP)
+```
+```{r}
+plot_ly(map1.7, z = map1.7[,3], locations = code, type = 'choropleth',
+        locationmode = 'USA-states', color = map1.7[,3], colors = 'Blues',
+        marker = list(line = l), colorbar = list(title = "Index"))%>%
+  layout(title = '2014 US RPP by State', geo = g)
+```
+
+#### 1.4.2 Adjusted Income Map
+```{r,echo=FALSE}
+map1.71 <- cbind(df[,1:2],STincome/RPP*100)
+```
+```{r}
+plot_ly(map1.71, z = map1.71[,3], locations = code, type = 'choropleth',
+        locationmode = 'USA-states', color = map1.71[,3], colors = 'Oranges',
+        marker = list(line = l), colorbar = list(title = "UDS"))%>%
+  layout(title = '2014 US adjusted income by State', geo = g)
+```
+
+
+## 2.Employment status in US
+Unemployment rate is defined most basically as the percentage of the total labor force that is unemployed but actively seeking employment and willing to work.
+That is. Unemployment rate=Unemployed/Total labor force.
+
+### 2.1 Description of Unemployment status
+```{r}
+us_emp<-nrow(as.matrix(Proj_1[which(ESR==1|ESR==2|ESR==4|ESR==5)]))
+us_unemp<-nrow(as.matrix(Proj_1[which(ESR==3)]))
+us_rate<- us_unemp/(us_emp+us_unemp)
+us_rate
+```
+
+### 2.2 Female and Male's Unemployment rate
+```{r}
+male_emp<-nrow(as.matrix(Proj_1[which(SEX==1&
+                                       (ESR==1|ESR==2|ESR==4|ESR==5))]))
+male_unemp<-nrow(as.matrix(Proj_1[which(ESR==3&SEX==1)]))
+female_emp<-nrow(as.matrix(Proj_1[which(SEX==2&
+                                       (ESR==1|ESR==2|ESR==4|ESR==5))]))
+female_unemp<-nrow(as.matrix(Proj_1[which(ESR==3&SEX==2)]))
+male_rate<- male_unemp/(male_emp+male_unemp)
+female_rate<- female_unemp/(female_emp+female_unemp)
+male_rate
+female_rate
+```
+
+
+### 2.3  Gender, Education and Unemployment Rate
+```{r,echo=FALSE}
+edu<-matrix()
+edu_emp<-vector()
+edu_unemp<-vector()
+
+for (i in 1:24){
+  edu_emp[i]<-nrow(as.matrix(Proj_1[which(SCHL==i&(ESR==1|ESR==2|ESR==4|ESR==5))]))
+  edu_unemp[i]<-nrow(as.matrix(Proj_1[which(ESR==3&SCHL==i)]))
+  edu[i]<-edu_unemp[i]/(edu_emp[i]+edu_unemp[i])
+}
+
+edu<-cbind(sort(unique(SCHL)),edu)
+colnames(edu)<-c("education attainment","unemployment rate")
+
+edu_atm<-c("a.No schooling completed",
+           "b.Nursery school/preschool",
+           "c.Kindergarten",
+           "d.Grade 1",
+           "e.Grade 2",
+           "f.Grade 3",
+           "g.Grade 4",
+           "h.Grade 5",
+           "i.Grade 6",
+           "j.Grade 7",
+           "k.Grade 8",
+           "l.Grade 9",
+           "m.Grade 10",
+           "n.Grade 11",
+           "o.Grade 12-no diploma",
+           "p.Regular high school diploma",
+           "q.GED or alternative credential",
+           "r.Some college, but less than 1 year",
+           "s.1 or more years of college credit, no degree",
+           "t.Associate's degree",
+           "u.Bachelor's degree",
+           "v.Master's degree",
+           "w.Professional degree",
+           "x.Doctorate degree")
+edu<-as.data.frame(edu)
+edu[,1]<-as.character(edu[,1])
+for (i in 1:24){
+  edu[i,1]<-edu_atm[i]
+}
+
+edu_female_emp<-vector()
+edu_female_unemp<-vector()
+edu_male_emp<-vector()
+edu_male_unemp<-vector()
+edu_female<-matrix()
+edu_male<-matrix()
+
+for (i in 1:24){
+  edu_female_emp[i]<-nrow(as.matrix(Proj_1[which(SCHL==i&SEX==2&(ESR==1|ESR==2|ESR==4|ESR==5))]))
+  edu_female_unemp[i]<-nrow(as.matrix(Proj_1[which(ESR==3&SCHL==i&SEX==2)]))
+  edu_female[i]<-edu_female_unemp[i]/(edu_female_emp[i]+edu_female_unemp[i])
+  
+  edu_male_emp[i]<-nrow(as.matrix(Proj_1[which(SCHL==i&SEX==1&(ESR==1|ESR==2|ESR==4|ESR==5))]))
+  edu_male_unemp[i]<-nrow(as.matrix(Proj_1[which(ESR==3&SCHL==i&SEX==1)]))
+  edu_male[i]<-edu_male_unemp[i]/(edu_male_emp[i]+edu_male_unemp[i])
+}
+
+edu_female<-as.data.frame(cbind(sort(unique(SCHL)),edu_female,rep("female",24)))
+colnames(edu_female)<-c("education attainment","unemployment rate","filter")
+
+edu_female[,1]<-as.character(edu_female[,1])
+for (i in 1:24){
+  edu_female[i,1]<-edu_atm[i]
+}
+edu_female[,2]<-as.numeric(paste(edu_female[,2]))
+
+edu_male<-as.data.frame(cbind(sort(unique(SCHL)),edu_male,rep("male",24)))
+colnames(edu_male)<-c("education attainment","unemployment rate","filter")
+
+edu_male[,1]<-as.character(edu_male[,1])
+for (i in 1:24){
+  edu_male[i,1]<-edu_atm[i]
+}
+edu_male[,2]<-as.numeric(paste(edu_male[,2]))
+
+edu_all<-as.data.frame(cbind(edu,rep("all",24)))
+colnames(edu_all)<-c("education attainment","unemployment rate","filter")
+
+edu_gender<-rbind(edu_female,edu_male,edu_all)
+
+education.attainment<-edu_gender[,1]
+unemployment.rate<-edu_gender[,2]
+filter<-edu_gender[,3]
+
+library(rbokeh)
+```
+```{r}
+figure(width = NULL, height = NULL) %>%
+ly_points( unemployment.rate,education.attainment,data = edu_gender,
+    color = filter, glyph = filter,
+    hover = list( unemployment.rate,education.attainment))
+
+```
+```{r,echo=FALSE}
+library(tidyr)
+library(plotly)
+s_Women<-as.numeric(paste(edu_female[,2]))
+s_Men<-as.numeric(paste(edu_male[,2]))
+edu_gender_sub<-as.data.frame(cbind(edu_atm,s_Women,s_Men))
+```
+```{r}
+gather(edu_gender_sub, Sex, value, s_Women, s_Men) %>%
+  plot_ly(x = value, y = edu_atm, mode = "markers",
+          color = Sex, colors = c("pink", "blue")) %>%
+  add_trace(x = value, y = edu_atm, mode = "lines",
+            group = edu_atm, showlegend = F, line = list(color = "gray")) %>%
+  layout(
+    title = "Gender earnings disparity",
+    xaxis = list(title = "Annual Salary (in thousands)"),
+    margin = list(l = 65)
+  )
+```
+
+
+###2.4 States and Unemployment Rate
+```{r,echo=FALSE}
+STcode <- c(1,2,4,5,6,8,9,10,12,13,15:42,44:51,53:56)
+ST_emp <-vector()
+ST_unemp<-vector()
+ST_unemp_rate<-vector()
+
+for(i in 1:50)
+{
+  ST_emp[i] <- nrow(as.matrix(Proj_1[which(ST==STcode[i]&(ESR==1|ESR==2|ESR==4|ESR==5))]))
+  ST_unemp[i] <- nrow(as.matrix(Proj_1[which(ST==STcode[i]&ESR==3)]))
+  ST_unemp_rate[i]<-ST_unemp[i] /(ST_emp[i]+ST_unemp[i])
+}
+
+###plot
+library(plotly)
+l <- list(color = toRGB("white"), width = 2)
+g <- list(
+  scope = 'usa',
+  projection = list(type = 'albers usa'),
+  showlakes = TRUE,
+  lakecolor = toRGB('white')
+)
+df <- read.csv("https://raw.githubusercontent.com/plotly/datasets/master/2011_us_ag_exports.csv")
+map1 <- cbind(df[,1:2],ST_unemp_rate)
+```
+```{r}
+plot_ly(map1, z = map1[,3], locations = code, type = 'choropleth',
+        locationmode = 'USA-states', color = map1[,3], colors = 'Greens',
+        marker = list(line = l), colorbar = list(title = "Unemp_ratae"))%>%
+  layout(title = '2014 US unemployment rate by State', geo = g)
+```
+
+
+### 2.5 Education degree and Employment status
+```{r,echo=FALSE}
+library(networkD3)
+netfile<-matrix(0,nrow=144,ncol=3)
+colnames(netfile)<-c("source","target","value")
+netfile[,1]<-sort(rep(0:23,6))
+netfile[,2]<-rep(24:29)
+
+for (i in 1:144){
+  netfile[i,3]<-nrow(as.matrix(Proj_1[which(SCHL==(netfile[i,1]+1)&
+                                            ESR==(netfile[i,2]-23))]))
+}
+
+nodes<-as.data.frame(matrix(0,nrow=30,ncol=2))
+colnames(nodes)<-c("name","group")
+nodes[,1]<-c("a.No schooling completed",
+           "b.Nursery school/preschool",
+           "c.Kindergarten",
+           "d.Grade 1",
+           "e.Grade 2",
+           "f.Grade 3",
+           "g.Grade 4",
+           "h.Grade 5",
+           "i.Grade 6",
+           "j.Grade 7",
+           "k.Grade 8",
+           "l.Grade 9",
+           "m.Grade 10",
+           "n.Grade 11",
+           "o.Grade 12-no diploma",
+           "p.Regular high school diploma",
+           "q.GED or alternative credential",
+           "r.Some college, but less than 1 year",
+           "s.1 or more years of college credit, no degree",
+           "t.Associate's degree",
+           "u.Bachelor's degree",
+           "v.Master's degree",
+           "w.Professional degree",
+           "x.Doctorate degree",
+           "Civilian employed, at work",
+           "Civilian employed, with a job",
+           "Unemployed",
+           "Armed forces, at work",
+           "Armed forces, with a job",
+           "Not in labor force")
+
+nodes[,2]<-rep(1:30)
+
+netfile<-as.data.frame(netfile)
+```
+```{r}
+sankeyNetwork(Links = netfile, Nodes = nodes, Source = "source",
+Target = "target", Value = "value", NodeID = "name",
+units = "TWh", fontSize = 12, nodeWidth = 30)
+```
+```{r,echo=FALSE}
+netfile1<-netfile
+netfile1[,3]<-netfile[,3]/10000
+```
+```{r}
+forceNetwork(Links = netfile1, Nodes = nodes, Source = "source",
+             Target = "target", Value = "value", NodeID = "name",
+             radiusCalculation = "Math.sqrt(d.nodesize)+6", 
+             Group = "group", opacity = 0.6,opacityNoHover = TRUE
+             )
+```
+
+
