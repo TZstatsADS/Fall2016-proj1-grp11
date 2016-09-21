@@ -15,7 +15,7 @@ Term: Fall 2016
 
 **Contribution statement**: All team members contributed equally in all stages of this project. All team members approve our work presented in this GitHub repository including this contributions statement. 
 
-Details: YZ, JG, CZ designed the outline. YS contributed with the storyline and presentation design. YZ designed and coded the unemployment plots. CZ designed and coded the income plots. JG coded commute time plots, although for time reasons were not included in the analysis. YS and JG practiced for presenting. JG presented.
+Details: YZ, JG, CZ designed the outline. YS contributed with the storyline and presentation design. YZ designed and coded the unemployment plots. CZ designed and coded the income plots. JG coded commute time plots, although for time reasons were not included in the analysis. YZ and CZ fixed last minute bugs on the code. YS and JG practiced for presenting. JG presented.
 
 **Link to final .rmd and .html file:** 
 [RMD version](lib/final_code 1.3.Rmd),
