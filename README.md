@@ -13,6 +13,8 @@ Term: Fall 2016
 + Project summary: 
    We want to display there exist inequity income and unemployment rate which is serious problem influence our life. Some of inequity we can improve by ourself. Some of that we can not. We wish government can improve policy to reduce this inequity. 
 
+**Contribution statement**: ([default](doc/a_note_on_contributions.md)) All team members contributed equally in all stages of this project. All team members approve our work presented in this GitHub repository including this contributions statement. 
+
 Link to final .rmd and .html file: 
 [RMD version](lib/final_code 1.2.Rmd),
 [HTML version](lib/final_code_1.2.html)
